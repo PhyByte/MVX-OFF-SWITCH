@@ -1,0 +1,11 @@
+# Upstream source (cloned by scripts/00_build.sh; has its own git history)
+/mx-chain-simulator-go/
+
+# Built binaries (large; reproducible via scripts/00_build.sh)
+/build/
+
+# Runtime artifacts: generated keys, fetched configs, logs, pids (disposable)
+/work/
+
+# macOS
+.DS_Store
