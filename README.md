@@ -15,6 +15,9 @@ behaviour — all offline, against a throwaway single-process chain.
 > show the config plumbing and that the trigger engages the export/shutdown path; the
 > single-node simulator cannot show the final process kill (see **Limitations**).
 
+📄 **Full write-up with the results of every run:** [INVESTIGATION.md](INVESTIGATION.md)
+(raw run logs in [`results/`](results/)).
+
 ---
 
 ## The mechanism (verified in source)

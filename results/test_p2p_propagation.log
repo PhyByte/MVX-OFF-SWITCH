@@ -1,0 +1,46 @@
+
+================================================================
+  MultiversX offswitch — P2P propagation (one broadcaster → whole network)
+================================================================
+[i] Real libp2p transport; sender has NO trigger; victims run unmodified node code.
+
+▶ [1/1] Build + run the propagation proof
+11:39:19 · injecting the propagation proof into the simulator module…
+11:39:19 · building the propagation harness…
+[+] built build/p2ppropagation
+11:39:20 · running (real libp2p on 127.0.0.1; halts observed via each node's closer)…
+
+=== MultiversX offswitch — P2P PROPAGATION over real libp2p gossip ===
+
+[authority] PublicKeyToListenFrom = c4b3defaf155e2efa8693e1173fba874...  (attacker holds the private half)
+
+[net] starting 3 victim nodes + 1 attacker node on real libp2p (127.0.0.1)...
+[net] waiting for the gossip mesh to form...
+      16Uiu2HAm1KM connected to 3 peers
+      16Uiu2HAm9RQ connected to 3 peers
+      16Uiu2HAm3eW connected to 3 peers
+      16Uiu2HAm9qS connected to 3 peers
+
+[attack] the attacker node (NO trigger) broadcasts ONE signed hardfork message...
+    >>> victim-3 received it over gossip and HALTED (hardfork trigger fired)
+    >>> victim-1 received it over gossip and HALTED (hardfork trigger fired)
+INFO [2026-09-24 11:39:24.823]   started hardFork export process          
+INFO [2026-09-24 11:39:24.823]   finished hardFork export process         
+INFO [2026-09-24 11:39:24.823]   started hardFork export process          
+INFO [2026-09-24 11:39:24.823]   node will still be active for            time duration = 2m0s 
+    >>> victim-2 received it over gossip and HALTED (hardfork trigger fired)
+
+------------------------------------------------------------------
+RESULT: PASS — 1 broadcast from a node with NO trigger halted all 3 other nodes.
+The attacker node itself has no hardfork trigger, so it is unaffected.
+Delivery was real libp2p gossip; acceptance + halt used unmodified node code.
+------------------------------------------------------------------
+INFO [2026-09-24 11:39:24.823]   started hardFork export process          
+INFO [2026-09-24 11:39:24.823]   finished hardFork export process         
+INFO [2026-09-24 11:39:24.823]   node will still be active for            time duration = 2m0s 
+INFO [2026-09-24 11:39:24.823]   finished hardFork export process         
+INFO [2026-09-24 11:39:24.823]   node will still be active for            time duration = 2m0s 
+
+================================================================
+  test_p2p_propagation done
+================================================================

@@ -1,0 +1,46 @@
+
+================================================================
+  MultiversX offswitch — P2P gossip path
+================================================================
+[i] No REST API, no libp2p host, sender is NOT a validator and does NOT run the node.
+
+▶ [1/1] Build + run the P2P proof against real node code
+11:39:47 · injecting the P2P proof into the simulator module…
+11:39:47 · building the proof harness…
+[+] built build/p2poffswitch
+11:39:48 · running (waits ~2 min for the stop signal)…
+
+=== MultiversX hardfork offswitch — P2P path proof (real node code) ===
+
+[authority] Hardfork.PublicKeyToListenFrom = cb1671cb1d8a1d42d1cbe1ea64417194...
+[authority] the attacker holds the matching PRIVATE key; it is NOT a validator.
+
+[1] Attacker (holds authority private key, NOT a validator) sends a hardfork peerAuthentication...
+    ACCEPTED by interceptedPeerAuthentication.CheckValidity()
+    (nodesCoordinator says 'not a validator' — bypassed because pubkey == PublicKeyToListenFrom)
+
+[2] Feeding it to the REAL peerAuthenticationInterceptorProcessor.Save() ...
+    Save() accepted; hardfork trigger engaged. Waiting for the node's stop signal...
+INFO [2026-09-24 11:39:48.521]   started hardFork export process          
+INFO [2026-09-24 11:39:48.522]   finished hardFork export process         
+INFO [2026-09-24 11:39:48.522]   node will still be active for            time duration = 2m0s 
+    >>> NODE HALTED: chanStopNodeProcess received Reason="HardForkExport" Description="Node finished the export process with success"
+
+[3] Control: a message from a DIFFERENT (non-authority) key...
+    REJECTED as expected: public key is not a registered validator
+
+[4] Control: the authority PUBLIC key but a BAD signature (no private key)...
+    REJECTED as expected: err blsSignatureDeserialize 04126728027eef9797cdf4aa2ea9fa34e682ee733141cbe27f50fdde574d4395113294a714441eb5f05000d1224fed19
+
+------------------------------------------------------------------
+RESULT: PASS (4/4 checks) — via the real interceptor + trigger:
+  [1] authority-key message ACCEPTED (non-validator)   -> node HALTED [2]
+  [3] non-authority key REJECTED
+  [4] authority PUBLIC key + bad signature REJECTED
+PROVEN: over P2P, only the holder of the authority PRIVATE key can halt a
+node. No REST API, no validator status, no operator access required.
+------------------------------------------------------------------
+
+================================================================
+  test_p2p done
+================================================================
