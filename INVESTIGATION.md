@@ -60,25 +60,39 @@ Node config ships the trigger; mainnet config replaces the key:
 
 ## Experiment 1 — REST / API path (`scripts/test_api.sh`)
 
-Generate our own BLS key, install it as `PublicKeyToListenFrom` in a real node config, boot
-the chain simulator, and call `POST /hardfork/trigger`. Full log:
-[`results/test_api.log`](results/test_api.log).
+Generate our own BLS key, install it as `PublicKeyToListenFrom`, and — **mirroring mainnet** —
+disable the REST route in `api.toml` (`{ Name = "/trigger", Open = false }`). Boot the chain
+simulator and call `POST /hardfork/trigger`. Full log: [`results/test_api.log`](results/test_api.log).
 
 ```
-was (shipped key)          facdd334fffda9178694fcbaf8da281f…
-now (our key)              <freshly generated BLS key>
-▶ [4/4] Run the chain and fire the REST trigger
-      response   {"data":{"status":"executed, trigger is affecting only the current node"}…}
-INFO  hardfork trigger              epoch = 1 withEarlyEndOfEpoch = false
-INFO  started hardFork export process
-[✓ PASS] trigger ACCEPTED with our key; node entered the hardfork EXPORT/shutdown sequence
+[+] REST /hardfork/trigger DISABLED (Open=false) — matches mainnet
+▶ [REST] POST http://localhost:<port>/hardfork/trigger  (api.toml /trigger Open=false)
+      http status                404
+      response                   404 page not found
+[✓ PASS] REST /hardfork/trigger is DISABLED (HTTP 404) — exactly as on mainnet
+      node state                 did NOT enter hardfork — the local REST vector is closed
+      network-wide vector        the P2P gossip path is untouched → run ./scripts/test_p2p.sh
 ```
 
-**Result:** our key is accepted; the trigger drives the node into the hardfork export/shutdown
-sequence. (The single-node simulator keeps producing via its manual block driver and never
-consumes `chanStopNodeProcess`, so it doesn't self-terminate — see the "Limitations" note in
-[README.md](README.md). This path is the *local operator* control; the network-wide vector is
-Experiment 2/3.)
+**Result:** with the endpoint disabled exactly as on mainnet, the local REST vector returns a
+plain **404** and the node does **not** trigger. This confirms the mainnet hardening is real —
+and precisely why it does not matter: closing the API removes only the *local* path. The
+network-wide P2P path is untouched (Experiments 2–3).
+
+The node ships this route `Open = true` by default; mainnet-config overrides it to `false`, so
+we do the same. To instead watch the trigger actually fire over REST, run with `REST_OPEN=1`:
+
+```
+REST_OPEN=1 ./scripts/test_api.sh
+→ http status 200
+→ response {"status":"executed, trigger is affecting only the current node"}
+→ INFO hardfork trigger … / started hardFork export process
+→ [✓ PASS] trigger ACCEPTED; node entered the hardfork EXPORT/shutdown sequence
+```
+
+(The single-node simulator keeps producing via its manual block driver and never consumes
+`chanStopNodeProcess`, so it doesn't self-terminate — see the "Limitations" note in
+[README.md](README.md).)
 
 ---
 

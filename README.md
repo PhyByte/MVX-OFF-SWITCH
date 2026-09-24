@@ -64,7 +64,7 @@ There are **three entry points**:
 
 | Script | What it does |
 |---|---|
-| **`scripts/test_api.sh`** | REST / API path: build the sim, generate a BLS key, install it as `PublicKeyToListenFrom`, boot the chain, and halt a node via `POST /hardfork/trigger`. `KEEP_RUNNING=1` leaves the sim up. |
+| **`scripts/test_api.sh`** | REST / API path: install our key as `PublicKeyToListenFrom` and — like mainnet — **disable** the `/hardfork/trigger` route (`api.toml Open=false`), showing the endpoint returns **404**. Run `REST_OPEN=1 ./scripts/test_api.sh` to instead watch the REST trigger fire. `KEEP_RUNNING=1` leaves the sim up. |
 | **`scripts/test_p2p.sh`** | **P2P gossip path:** drive the real interceptor + trigger with a message signed by the authority private key — no REST API, no validator status — and show the node halt; controls reject a non-authority key and a forged signature. |
 | **`scripts/test_p2p_propagation.sh`** | **Fan-out over real libp2p:** 1 attacker node with **no trigger** + N victim nodes on a real 127.0.0.1 gossip network; one broadcast halts **all** victims, attacker unaffected. |
 

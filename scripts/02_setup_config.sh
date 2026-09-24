@@ -43,3 +43,19 @@ ok "config patched"
 kv "config file" "${NODE_CFG#$ROOT/}"
 kv "was (shipped key)" "${ORIG:0:32}…"
 kv "now (our key)" "${PUB:0:32}…"
+
+# Mirror mainnet: disable the REST /hardfork/trigger route (api.toml Open=false).
+# The node repo ships it Open=true; mainnet-config overrides it to false. Set REST_OPEN=1
+# to keep it open (to demonstrate the REST trigger actually firing).
+API_CFG="$RUN/config/node/config/api.toml"
+if [ -f "$API_CFG" ]; then
+  if [ "${REST_OPEN:-0}" = "1" ]; then
+    sed -E 's|(\{ Name = "/trigger", Open = )false|\1true|' "$API_CFG" > "$API_CFG.tmp" && mv "$API_CFG.tmp" "$API_CFG"
+    warn "REST /hardfork/trigger left OPEN (REST_OPEN=1) — NOT mainnet-accurate"
+  else
+    sed -E 's|(\{ Name = "/trigger", Open = )true|\1false|' "$API_CFG" > "$API_CFG.tmp" && mv "$API_CFG.tmp" "$API_CFG"
+    ok "REST /hardfork/trigger DISABLED (Open=false) — matches mainnet"
+  fi
+  kv "api.toml" "${API_CFG#$ROOT/}"
+  kv "/trigger route" "$(grep '"/trigger"' "$API_CFG")"
+fi

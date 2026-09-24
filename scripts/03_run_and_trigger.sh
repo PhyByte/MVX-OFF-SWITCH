@@ -63,31 +63,45 @@ kv "meta epoch / nonce" "$EPOCH / $NONCE_BEFORE"
 [ "$EPOCH" -ge 1 ] || die "epoch still 0; cannot trigger (minimum epoch is 1)"
 
 # --- FIRE THE OFFSWITCH ------------------------------------------------------
-phase "REST" "firing POST http://localhost:$META_PORT/hardfork/trigger"
-RESP="$(curl -s -m 10 -X POST "http://localhost:$META_PORT/hardfork/trigger" \
+API_CFG="$RUN/config/node/config/api.toml"
+REST_STATE="$(grep '"/trigger"' "$API_CFG" 2>/dev/null | grep -oE 'Open = (true|false)' | awk '{print $3}')"
+
+phase "REST" "POST http://localhost:$META_PORT/hardfork/trigger  (api.toml /trigger Open=$REST_STATE)"
+BODY_FILE="$WORK/rest_body.txt"
+HTTP="$(curl -s -o "$BODY_FILE" -w '%{http_code}' -m 10 -X POST "http://localhost:$META_PORT/hardfork/trigger" \
         -H 'Content-Type: application/json' \
         -d "{\"epoch\":$EPOCH,\"withEarlyEndOfEpoch\":false}")"
+RESP="$(cat "$BODY_FILE" 2>/dev/null)"
+kv "http status" "$HTTP"
 kv "response" "$RESP"
 sleep 4
-
-# --- observe -----------------------------------------------------------------
-log "node log (trigger sequence):"
-grep -iE "hardfork trigger|started hardFork export|hardFork export process" "$SIM_LOG" | tail -4 \
-  | sed -E 's/\x1b\[[0-9;]*m//g; s/^/      /' >&2
 
 TRIGGERED=$(grep -c "hardfork trigger" "$SIM_LOG" || true)
 EXPORTING=$(grep -c "started hardFork export process" "$SIM_LOG" || true)
 
-NONCE_AFTER="$(curl -s -m 5 "$PROXY_URL/network/status/4294967295" 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["status"]["erd_nonce"])' 2>/dev/null || echo '?')"
-
 echo >&2
-if [ "$TRIGGERED" -ge 1 ] && [ "$EXPORTING" -ge 1 ]; then
-  pass "trigger ACCEPTED with our key; node entered the hardfork EXPORT/shutdown sequence"
+if [ "$REST_STATE" = "false" ]; then
+  # Mainnet-accurate: the route is not registered, so the local REST vector is closed.
+  if [ "$HTTP" = "404" ] && [ "$TRIGGERED" -eq 0 ]; then
+    pass "REST /hardfork/trigger is DISABLED (HTTP 404) — exactly as on mainnet (api.toml Open=false)"
+    kv "node state" "did NOT enter hardfork — the local REST vector is closed"
+  else
+    warn "expected a closed route (404, no trigger); got HTTP=$HTTP triggered=$TRIGGERED"
+  fi
+  kv "takeaway" "closing the API removes only the LOCAL vector"
+  kv "network-wide vector" "the P2P gossip path is untouched → run ./scripts/test_p2p.sh"
 else
-  warn "trigger did not visibly engage — inspect ${SIM_LOG#$ROOT/}"
+  # REST open (REST_OPEN=1): demonstrate the trigger actually firing.
+  log "node log (trigger sequence):"
+  grep -iE "hardfork trigger|started hardFork export|hardFork export process" "$SIM_LOG" | tail -4 \
+    | sed -E 's/\x1b\[[0-9;]*m//g; s/^/      /' >&2
+  if [ "$TRIGGERED" -ge 1 ] && [ "$EXPORTING" -ge 1 ]; then
+    pass "trigger ACCEPTED with our key; node entered the hardfork EXPORT/shutdown sequence"
+  else
+    warn "trigger did not visibly engage — inspect ${SIM_LOG#$ROOT/}"
+  fi
+  case "$RESP" in
+    *"broadcast to other peers"*) kv "scope" "IsSelfTrigger=TRUE  → would BROADCAST a network-wide halt";;
+    *"only the current node"*)    kv "scope" "IsSelfTrigger=FALSE → local only (sim node self-key != our key; expected)";;
+  esac
 fi
-case "$RESP" in
-  *"broadcast to other peers"*) kv "scope" "IsSelfTrigger=TRUE  → would BROADCAST a network-wide halt";;
-  *"only the current node"*)    kv "scope" "IsSelfTrigger=FALSE → local only (sim node self-key != our key; expected)";;
-esac
-kv "meta nonce after" "$NONCE_AFTER (sim keeps producing via its manual driver — see README 'Limitations')"

@@ -2,52 +2,53 @@
 ================================================================
   MultiversX offswitch — REST / API path
 ================================================================
-[i] This is the LOCAL operator vector. On mainnet it is disabled in api.toml
-[i] ("/trigger", Open = false). For the network-wide vector, run test_p2p.sh.
+[i] Replicates mainnet: the /hardfork/trigger route is DISABLED (api.toml Open=false),
+[i] so the local REST vector returns 404. Run with REST_OPEN=1 to instead see the
+[i] trigger actually fire. Either way, the network-wide vector is test_p2p.sh.
 
 ▶ [1/4] Build simulator + keygenerator
 [+] chain simulator already built (build/chainsimulator) — use --force to rebuild
 [+] keygenerator already built (build/keygenerator) — use --force to rebuild
 
 ▶ [2/4] Generate a fresh BLS key
-11:39:32 · generating a BLS validator key…
+12:15:07 · generating a BLS validator key…
 [+] generated a fresh BLS validator key
       private key file           work/keys/validatorKey.pem
-      public key (hex)           69e2f9afd06aea59a613212ab0e52fcc…  (192 chars)
+      public key (hex)           d77fdd7bcb4033124117183486b8b0c8…  (192 chars)
 
 ▶ [3/4] Install our key into the node config
-11:39:32 · setting up run directory (work/run)…
+12:15:07 · setting up run directory (work/run)…
 [+] node configs already present
-11:39:32 · installing our key as the offswitch (Hardfork.PublicKeyToListenFrom)…
+12:15:07 · installing our key as the offswitch (Hardfork.PublicKeyToListenFrom)…
 [+] config patched
       config file                work/run/config/node/config/config.toml
-      was (shipped key)          ff43ec53f372c34c47c5ee02cfa2750e…
-      now (our key)              69e2f9afd06aea59a613212ab0e52fcc…
+      was (shipped key)          b4667c31e46b0eb81d62ddd5eaa7fe58…
+      now (our key)              d77fdd7bcb4033124117183486b8b0c8…
+[+] REST /hardfork/trigger DISABLED (Open=false) — matches mainnet
+      api.toml                   work/run/config/node/config/api.toml
+      /trigger route                     { Name = "/trigger", Open = false }
 
 ▶ [4/4] Run the chain and fire the REST trigger
-11:39:32 · starting the chain simulator (node logs -> work/sim.log)…
-11:39:32 · simulator pid 76165
-11:39:32 · waiting for the proxy on http://localhost:8085 …
+12:15:07 · starting the chain simulator (node logs -> work/sim.log)…
+12:15:07 · simulator pid 82669
+12:15:07 · waiting for the proxy on http://localhost:8085 …
 [+] proxy is up
 [+] chain is live
-      shard API ports            0:61241, 1:61243, 2:61245, 4294967295:61239
-      metachain node API         port 61239
-11:39:33 · generating 25 blocks to reach epoch >= 1 …
+      shard API ports            0:62287, 1:62289, 2:62291, 4294967295:62285
+      metachain node API         port 62285
+12:15:08 · generating 25 blocks to reach epoch >= 1 …
       meta epoch / nonce         1 / 26
 
-▶ [REST] firing POST http://localhost:61239/hardfork/trigger
-      response                   {"data":{"status":"executed, trigger is affecting only the current node"},"error":"","code":"successful"}
-11:39:38 · node log (trigger sequence):
-      WARN [2026-09-24 11:39:32.944]   version string is not in the correct format. Hardfork trigger will lead to unpredictable results 
-      WARN [2026-09-24 11:39:33.001]   version string is not in the correct format. Hardfork trigger will lead to unpredictable results 
-      INFO [2026-09-24 11:39:34.766]   hardfork trigger                         epoch = 1 withEarlyEndOfEpoch = false 
-      INFO [2026-09-24 11:39:34.835]   started hardFork export process          
+▶ [REST] POST http://localhost:62285/hardfork/trigger  (api.toml /trigger Open=false)
+      http status                404
+      response                   404 page not found
 
-[✓ PASS] trigger ACCEPTED with our key; node entered the hardfork EXPORT/shutdown sequence
-      scope                      IsSelfTrigger=FALSE → local only (sim node self-key != our key; expected)
-      meta nonce after           26 (sim keeps producing via its manual driver — see README 'Limitations')
-/Users/phybyte/Workspace/mvx-offswitch/scripts/03_run_and_trigger.sh: line 19: 76165 Terminated: 15          ( cd "$RUN" && exec "$SIM_BIN" --skip-configs-download --log-level "*:INFO" ) > "$SIM_LOG" 2>&1
-11:39:39 · simulator stopped
+[✓ PASS] REST /hardfork/trigger is DISABLED (HTTP 404) — exactly as on mainnet (api.toml Open=false)
+      node state                 did NOT enter hardfork — the local REST vector is closed
+      takeaway                   closing the API removes only the LOCAL vector
+      network-wide vector        the P2P gossip path is untouched → run ./scripts/test_p2p.sh
+/Users/phybyte/Workspace/mvx-offswitch/scripts/03_run_and_trigger.sh: line 19: 82669 Terminated: 15          ( cd "$RUN" && exec "$SIM_BIN" --skip-configs-download --log-level "*:INFO" ) > "$SIM_LOG" 2>&1
+12:15:14 · simulator stopped
 
 ================================================================
   test_api done

@@ -13,8 +13,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 banner "MultiversX offswitch — REST / API path"
-info "This is the LOCAL operator vector. On mainnet it is disabled in api.toml"
-info "(\"/trigger\", Open = false). For the network-wide vector, run test_p2p.sh."
+info "Replicates mainnet: the /hardfork/trigger route is DISABLED (api.toml Open=false),"
+info "so the local REST vector returns 404. Run with REST_OPEN=1 to instead see the"
+info "trigger actually fire. Either way, the network-wide vector is test_p2p.sh."
 
 phase "1/4" "Build simulator + keygenerator"
 bash "$HERE/00_build.sh"
